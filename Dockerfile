@@ -16,4 +16,5 @@ COPY --from=build /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
 COPY --from=build /go/bin/podlist /usr/local/bin/podlist
 
 EXPOSE 8080
+EXPOSE 8081
 ENTRYPOINT ["podlist"]

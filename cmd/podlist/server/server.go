@@ -6,12 +6,16 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/rs/zerolog"
+	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/rest"
 )
 
 type Server struct {
 	log         zerolog.Logger
 	server      *http.Server
 	adminServer *http.Server
+
+	kubernetesClient *kubernetes.Clientset
 }
 
 // ServerOption lets you functionally control construction of the web server
@@ -27,12 +31,20 @@ func NewServer(log zerolog.Logger, options ...ServerOption) *Server {
 		},
 	}
 
-	// Defaults
-	// s.adminServer = defaultAdminServer()
-
 	// Overrides
 	for _, option := range options {
 		option(s)
+	}
+
+	// Defaults
+	if s.kubernetesClient == nil {
+		cfg, _ := rest.InClusterConfig()
+		clientset, _ := kubernetes.NewForConfig(cfg)
+		s.kubernetesClient = clientset
+	}
+
+	if s.adminServer == nil {
+		s.adminServer = defaultAdminServer()
 	}
 
 	s.registerRoutes(r)
@@ -56,5 +68,11 @@ func WithLogger(log zerolog.Logger) ServerOption {
 func WithAdminServer(adminServer *http.Server) ServerOption {
 	return func(s *Server) {
 		s.adminServer = adminServer
+	}
+}
+
+func WithKubernetesClient(clientset *kubernetes.Clientset) ServerOption {
+	return func(s *Server) {
+		s.kubernetesClient = clientset
 	}
 }

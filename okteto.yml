@@ -17,3 +17,4 @@ dev:
       - .:/usr/src/app
     forward:
       - 8080:8080
+      - 8081:8081

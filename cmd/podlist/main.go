@@ -43,6 +43,7 @@ func main() {
 		close(done)
 	}()
 
+	log.Info().Msg("Listening on port 8080")
 	if err := s.Start(); err != http.ErrServerClosed {
 		log.Error().Err(err).Msg("couldn't shut down gracefully")
 	}

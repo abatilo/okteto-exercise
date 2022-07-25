@@ -13,6 +13,7 @@ import (
 
 	"github.com/AppsFlyer/go-sundheit/checks"
 	healthhttp "github.com/AppsFlyer/go-sundheit/http"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
 func defaultAdminServer() *http.Server {
@@ -35,7 +36,7 @@ func defaultAdminServer() *http.Server {
 
 	mux := http.NewServeMux()
 	mux.Handle("/healthz", healthhttp.HandleHealthJSON(h))
-	// mux.Handle("/metrics", promhttp.Handler())
+	mux.Handle("/metrics", promhttp.Handler())
 
 	// pprof
 	mux.HandleFunc("/debug/pprof/", pprof.Index)
@@ -49,5 +50,6 @@ func defaultAdminServer() *http.Server {
 		Handler: mux,
 	}
 
+	go adminSrv.ListenAndServe()
 	return adminSrv
 }
