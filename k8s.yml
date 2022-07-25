@@ -1,0 +1,48 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: podlist
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: podlist
+  template:
+    metadata:
+      labels:
+        app: podlist
+    spec:
+      containers:
+        - image: okteto.dev/podlist:latest
+          name: podlist
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: podlist
+spec:
+  type: ClusterIP
+  ports:
+  - name: "podlist"
+    port: 8080
+  selector:
+    app: podlist
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: podlist
+  annotations:
+    dev.okteto.com/generate-host: podlist
+spec:
+  rules:
+  - http:
+      paths:
+      - backend:
+          service:
+            name: podlist
+            port:
+              number: 8080
+        path: /
+        pathType: ImplementationSpecific

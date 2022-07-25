@@ -1,0 +1,19 @@
+name: okteto-exercise
+
+build:
+  podlist:
+    context: .
+
+deploy:
+  - okteto build -t okteto.dev/podlist:latest
+  - kubectl apply -f k8s.yml
+
+dev:
+  podlist:
+    image: okteto/dev:latest
+    command: bash
+    workdir: /usr/src/app
+    sync:
+      - .:/usr/src/app
+    forward:
+      - 8080:8080
