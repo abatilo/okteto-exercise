@@ -8,24 +8,19 @@ import (
 	"time"
 
 	"github.com/AppsFlyer/go-sundheit"
-	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/rest"
-
 	"github.com/AppsFlyer/go-sundheit/checks"
 	healthhttp "github.com/AppsFlyer/go-sundheit/http"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
-func defaultAdminServer() *http.Server {
-	cfg, _ := rest.InClusterConfig()
-	clientset, _ := kubernetes.NewForConfig(cfg)
+func (s *Server) defaultAdminServer() *http.Server {
 	h := gosundheit.New()
 
 	h.RegisterCheck(
 		&checks.CustomCheck{
 			CheckName: "k8s-controlplane-healthz",
 			CheckFunc: func(ctx context.Context) (details interface{}, err error) {
-				result := clientset.Discovery().RESTClient().Get().AbsPath("/healthz").Do(ctx)
+				result := s.kubernetesClient.Discovery().RESTClient().Get().AbsPath("/healthz").Do(ctx)
 				b, _ := result.Raw()
 				return string(b), result.Error()
 			},

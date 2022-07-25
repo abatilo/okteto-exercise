@@ -57,7 +57,7 @@ func (s *Server) listPods() http.HandlerFunc {
 		sortBy := SortByName
 		sortParam := r.URL.Query().Get("sort")
 
-		s.log.Debug().Str("sort", sortParam).Msg("Sort param")
+		s.log.Debug().Str("sort", sortParam).Msg("Sort method")
 
 		if sortParam == "restarts" {
 			sortBy = SortByRestarts
