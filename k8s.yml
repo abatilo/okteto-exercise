@@ -13,6 +13,7 @@ spec:
       labels:
         app: podlist
     spec:
+      serviceAccountName: podlist
       containers:
         - image: okteto.dev/podlist:latest
           name: podlist
@@ -46,3 +47,39 @@ spec:
               number: 8080
         path: /
         pathType: ImplementationSpecific
+---
+apiVersion: v1
+automountServiceAccountToken: true
+kind: ServiceAccount
+metadata:
+  labels:
+    app: podlist
+  name: podlist
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  labels:
+    app: podlist
+  name: podlist
+rules:
+  - apiGroups:
+    - ""
+    resources:
+    - pods
+    verbs:
+    - list
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  labels:
+    app: podlist
+  name: podlist
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: podlist
+subjects:
+  - kind: ServiceAccount
+    name: podlist

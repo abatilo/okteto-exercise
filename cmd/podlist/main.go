@@ -1,8 +1,13 @@
 package main
 
 import (
+	"context"
+	"net/http"
 	"os"
+	"os/signal"
+	"syscall"
 
+	"github.com/abatilo/okteto-exercise/cmd/podlist/server"
 	"github.com/rs/zerolog"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
@@ -25,5 +30,22 @@ func main() {
 
 	log := zerolog.New(os.Stdout).With().Timestamp().Logger()
 
-	log.Info().Msg("Starting podlist")
+	s := server.NewServer(log)
+
+	// Register signal handlers for graceful shutdown
+	done := make(chan struct{})
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+	go func() {
+		<-quit
+		log.Info().Msg("Shutting down gracefully")
+		s.Shutdown(context.TODO())
+		close(done)
+	}()
+
+	if err := s.Start(); err != http.ErrServerClosed {
+		log.Error().Err(err).Msg("couldn't shut down gracefully")
+	}
+	<-done
+	log.Info().Msg("Exiting")
 }
