@@ -44,7 +44,7 @@ func NewServer(log zerolog.Logger, options ...ServerOption) *Server {
 	}
 
 	if s.adminServer == nil {
-		s.adminServer = defaultAdminServer()
+		s.adminServer = s.defaultAdminServer()
 	}
 
 	s.registerRoutes(r)
