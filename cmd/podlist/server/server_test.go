@@ -11,7 +11,6 @@ import (
 
 	"github.com/abatilo/okteto-exercise/cmd/podlist/server"
 	"github.com/abatilo/okteto-exercise/internal"
-	"github.com/go-chi/chi/v5"
 	"github.com/rs/zerolog"
 )
 
@@ -157,7 +156,7 @@ func Test_listPods(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		r := chi.NewRouter()
+		// Create an empty server with mocked dependencies
 		s := server.NewServer(
 			server.WithLogger(zerolog.New(ioutil.Discard)),
 			server.WithAdminServer(&http.Server{}),
@@ -169,8 +168,8 @@ func Test_listPods(t *testing.T) {
 				Error: nil,
 			}),
 		)
-		s.RegisterRoutes(r)
 
+		// Mock handling of an entire request
 		req := httptest.NewRequest(http.MethodGet, test.requestURL, nil)
 		w := httptest.NewRecorder()
 		s.ServeHTTP(w, req)
