@@ -20,7 +20,7 @@ func (s *Server) defaultAdminServer() *http.Server {
 		&checks.CustomCheck{
 			CheckName: "k8s-controlplane-healthz",
 			CheckFunc: func(ctx context.Context) (details interface{}, err error) {
-				result := s.kubernetesClient.Discovery().RESTClient().Get().AbsPath("/healthz").Do(ctx)
+				result := s.kubernetesClient.Healthz(ctx)
 				b, _ := result.Raw()
 				return string(b), result.Error()
 			},

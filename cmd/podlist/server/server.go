@@ -3,11 +3,12 @@ package server
 import (
 	"context"
 	"net/http"
+	"os"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/rs/zerolog"
-	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/rest"
+
+	"github.com/abatilo/okteto-exercise/internal"
 )
 
 type Server struct {
@@ -15,39 +16,37 @@ type Server struct {
 	server      *http.Server
 	adminServer *http.Server
 
-	kubernetesClient *kubernetes.Clientset
+	metrics          internal.MetricsClient
+	kubernetesClient internal.ControlPlaneClient
 }
 
 // ServerOption lets you functionally control construction of the web server
 type ServerOption func(s *Server)
 
-func NewServer(log zerolog.Logger, options ...ServerOption) *Server {
+func NewServer(options ...ServerOption) *Server {
 	r := chi.NewRouter()
 	s := &Server{
-		log: log,
 		server: &http.Server{
 			Addr:    ":8080",
 			Handler: r,
 		},
 	}
 
+	// Defaults
+	s.log = zerolog.New(os.Stdout).With().Timestamp().Logger()
+
+	s.metrics = &internal.PrometheusMetrics{}
+
+	s.kubernetesClient = internal.NewKubernetesClient(s.log)
+
+	s.adminServer = s.defaultAdminServer()
+
 	// Overrides
 	for _, option := range options {
 		option(s)
 	}
 
-	// Defaults
-	if s.kubernetesClient == nil {
-		cfg, _ := rest.InClusterConfig()
-		clientset, _ := kubernetes.NewForConfig(cfg)
-		s.kubernetesClient = clientset
-	}
-
-	if s.adminServer == nil {
-		s.adminServer = s.defaultAdminServer()
-	}
-
-	s.registerRoutes(r)
+	s.RegisterRoutes(r)
 	return s
 }
 
@@ -57,6 +56,10 @@ func (s *Server) Start() error {
 
 func (s *Server) Shutdown(ctx context.Context) error {
 	return s.server.Shutdown(ctx)
+}
+
+func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	s.server.Handler.ServeHTTP(w, r)
 }
 
 func WithLogger(log zerolog.Logger) ServerOption {
@@ -71,7 +74,13 @@ func WithAdminServer(adminServer *http.Server) ServerOption {
 	}
 }
 
-func WithKubernetesClient(clientset *kubernetes.Clientset) ServerOption {
+func WithMetrics(metrics internal.MetricsClient) ServerOption {
+	return func(s *Server) {
+		s.metrics = metrics
+	}
+}
+
+func WithKubernetesClient(clientset internal.ControlPlaneClient) ServerOption {
 	return func(s *Server) {
 		s.kubernetesClient = clientset
 	}

@@ -29,8 +29,7 @@ func main() {
 	}
 
 	log := zerolog.New(os.Stdout).With().Timestamp().Logger()
-
-	s := server.NewServer(log)
+	s := server.NewServer(server.WithLogger(log))
 
 	// Register signal handlers for graceful shutdown
 	done := make(chan struct{})

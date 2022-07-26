@@ -1,20 +1,17 @@
 package server
 
 import (
-	"io/ioutil"
 	"net/http"
 	"sort"
 	"time"
 
+	"github.com/abatilo/okteto-exercise/internal"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/render"
 	"github.com/hako/durafmt"
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promauto"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func (s *Server) registerRoutes(r *chi.Mux) {
+func (s *Server) RegisterRoutes(r *chi.Mux) {
 	r.Get("/", s.index())
 	r.Get("/api/v1/pods", s.listPods())
 }
@@ -26,15 +23,10 @@ func (s *Server) index() http.HandlerFunc {
 }
 
 func (s *Server) listPods() http.HandlerFunc {
-	count := promauto.NewGauge(prometheus.GaugeOpts{
+	count := s.metrics.NewGauge(internal.GaugeOpts{
 		Name: "podlist_pod_count",
 		Help: "The total number of pods being listed",
 	})
-
-	namespace, err := ioutil.ReadFile("/var/run/secrets/kubernetes.io/serviceaccount/namespace")
-	if err != nil {
-		s.log.Fatal().Err(err).Msg("Failed to read namespace")
-	}
 
 	type pod struct {
 		Name     string `json:"name"`
@@ -65,7 +57,7 @@ func (s *Server) listPods() http.HandlerFunc {
 			sortBy = SortByAge
 		}
 
-		podList, err := s.kubernetesClient.CoreV1().Pods(string(namespace)).List(r.Context(), metav1.ListOptions{})
+		podList, err := s.kubernetesClient.ListPods(r.Context())
 		if err != nil {
 			s.log.Error().Err(err).Msg("failed to list pods")
 			render.Status(r, http.StatusInternalServerError)
