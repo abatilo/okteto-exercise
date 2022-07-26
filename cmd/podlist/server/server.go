@@ -3,7 +3,6 @@ package server
 import (
 	"context"
 	"net/http"
-	"os"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/rs/zerolog"
@@ -31,15 +30,6 @@ func NewServer(options ...ServerOption) *Server {
 			Handler: r,
 		},
 	}
-
-	// Defaults
-	s.log = zerolog.New(os.Stdout).With().Timestamp().Logger()
-
-	s.metrics = &internal.PrometheusMetrics{}
-
-	s.kubernetesClient = internal.NewKubernetesClient(s.log)
-
-	s.adminServer = s.defaultAdminServer()
 
 	// Overrides
 	for _, option := range options {

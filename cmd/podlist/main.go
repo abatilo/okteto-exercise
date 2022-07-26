@@ -8,6 +8,7 @@ import (
 	"syscall"
 
 	"github.com/abatilo/okteto-exercise/cmd/podlist/server"
+	"github.com/abatilo/okteto-exercise/internal"
 	"github.com/rs/zerolog"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
@@ -29,7 +30,13 @@ func main() {
 	}
 
 	log := zerolog.New(os.Stdout).With().Timestamp().Logger()
-	s := server.NewServer(server.WithLogger(log))
+	k8sClient := internal.NewKubernetesClient(log)
+	s := server.NewServer(
+		server.WithLogger(log),
+		server.WithAdminServer(server.DefaultAdminServer(k8sClient)),
+		server.WithMetrics(&internal.PrometheusMetrics{}),
+		server.WithKubernetesClient(k8sClient),
+	)
 
 	// Register signal handlers for graceful shutdown
 	done := make(chan struct{})
